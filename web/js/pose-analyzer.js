@@ -7,10 +7,11 @@ import { drawLandmarksAndAngles, calculateFPS, formatTime } from './utils.js';
 import { PoseCoach } from './pose-coach.js';
 
 export class PoseAnalyzer {
-    constructor() {
+    constructor(voiceCoach = null) {
         this.pose = null;
         this.camera = null;
         this.coach = new PoseCoach();
+        this.voiceCoach = voiceCoach;
         this.isRunning = false;
         this.exerciseType = 'pushup';
         this.lastPoseDetected = false;
@@ -21,6 +22,7 @@ export class PoseAnalyzer {
         this.sessionStartTime = null;
         this.totalFrames = 0;
         this.detectedFrames = 0;
+        this.repCount = 0; // Track repetitions for voice feedback
         
         // UI elements
         this.videoElement = null;
@@ -379,6 +381,11 @@ export class PoseAnalyzer {
             
             // Update speedometer gauge
             this.updateSpeedometer(feedback.sessionStats.goodFormPercentage);
+        }
+
+        // Provide voice feedback if voice coach is available
+        if (this.voiceCoach) {
+            this.voiceCoach.processFeedback(feedback, this.exerciseType, this.repCount);
         }
     }
 

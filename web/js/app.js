@@ -5,14 +5,19 @@
 
 import { PoseAnalyzer } from './pose-analyzer.js';
 import { PoseCoach } from './pose-coach.js';
+import { VoiceCoach } from './voice-coach.js';
 import { getAvailableCameras, requestCameraPermission } from './utils.js';
 
 class FitnessCoachApp {
     constructor() {
         this.analyzer = null;
+        this.voiceCoach = null;
         this.isRunning = false;
         this.isPaused = false;
         this.currentExercise = 'pushup';
+        
+        // ElevenLabs API key - you provided this key
+        this.elevenLabsApiKey = 'sk_fb116093257dc988bde710e13a00c2f19139cefde616aac8';
         
         this.initializeApp();
     }
@@ -26,6 +31,9 @@ class FitnessCoachApp {
         try {
             // Hide loading and show interface
             this.hideLoading();
+            
+            // Initialize voice coach
+            this.initializeVoiceCoach();
             
             // Setup UI event listeners
             this.setupEventListeners();
@@ -45,9 +53,43 @@ class FitnessCoachApp {
     }
 
     /**
+     * Initialize voice coach
+     */
+    initializeVoiceCoach() {
+        try {
+            this.voiceCoach = new VoiceCoach(this.elevenLabsApiKey);
+            console.log('🎤 Voice coach initialized successfully');
+        } catch (error) {
+            console.error('❌ Failed to initialize voice coach:', error);
+            this.showError('Voice coaching unavailable. Check your internet connection.');
+        }
+    }
+
+    /**
      * Setup event listeners for UI interactions
      */
     setupEventListeners() {
+        // Voice toggle (setup screen)
+        const voiceToggle = document.getElementById('voiceToggle');
+        if (voiceToggle) {
+            voiceToggle.addEventListener('change', (e) => {
+                const isEnabled = e.target.checked;
+                if (this.voiceCoach) {
+                    this.voiceCoach.setEnabled(isEnabled);
+                }
+                this.updateVoiceToggleLabel(isEnabled);
+                console.log(`Voice coaching ${isEnabled ? 'enabled' : 'disabled'}`);
+            });
+        }
+
+        // Voice toggle button (main interface)
+        const voiceToggleBtn = document.getElementById('voiceToggleBtn');
+        if (voiceToggleBtn) {
+            voiceToggleBtn.addEventListener('click', () => {
+                this.toggleVoiceCoaching();
+            });
+        }
+
         // Exercise selection
         const exerciseSelect = document.getElementById('exerciseSelect');
         if (exerciseSelect) {
@@ -55,6 +97,9 @@ class FitnessCoachApp {
                 this.currentExercise = e.target.value;
                 if (this.analyzer) {
                     this.analyzer.setExerciseType(this.currentExercise);
+                }
+                if (this.voiceCoach) {
+                    this.voiceCoach.announceExerciseChange(this.currentExercise);
                 }
                 this.updateExerciseTips();
                 console.log(`Exercise changed to: ${this.currentExercise}`);
@@ -97,6 +142,20 @@ class FitnessCoachApp {
             } else if (e.code === 'Escape') {
                 if (this.isRunning) {
                     this.stopAnalysis();
+                }
+            } else if (e.code === 'KeyT' && e.ctrlKey) {
+                // Ctrl+T to test voice
+                e.preventDefault();
+                if (this.voiceCoach) {
+                    console.log('🧪 Manual voice test triggered');
+                    this.voiceCoach.testVoice();
+                }
+            } else if (e.code === 'KeyD' && e.ctrlKey) {
+                // Ctrl+D to debug ElevenLabs
+                e.preventDefault();
+                if (this.voiceCoach) {
+                    console.log('🔍 Manual debug test triggered');
+                    this.voiceCoach.debugElevenLabs();
                 }
             }
         });
@@ -172,7 +231,7 @@ class FitnessCoachApp {
             // Initialize analyzer if not created
             if (!this.analyzer) {
                 console.log('🚀 Creating pose analyzer...');
-                this.analyzer = new PoseAnalyzer();
+                this.analyzer = new PoseAnalyzer(this.voiceCoach);
             }
 
             // Start the analyzer
@@ -186,6 +245,11 @@ class FitnessCoachApp {
                 
                 // Add analysis status overlay
                 this.addAnalysisOverlay();
+                
+                // Provide welcome voice message
+                if (this.voiceCoach) {
+                    this.voiceCoach.provideWelcomeMessage();
+                }
             } else {
                 this.updateStartStopButtons(false);
                 this.showError('Failed to start pose analysis. Please try again.');
@@ -377,12 +441,70 @@ class FitnessCoachApp {
                 this.analyzer.setExerciseType(newValue);
             }
             
+            // Announce exercise change via voice
+            if (this.voiceCoach) {
+                this.voiceCoach.announceExerciseChange(newValue);
+            }
+            
             // Reset the dropdown to default
             if (exerciseDropdown) {
                 exerciseDropdown.value = '';
             }
             
             this.showStatus(`Switched to ${newValue}`, 'info');
+        }
+    }
+
+    /**
+     * Toggle voice coaching on/off
+     */
+    toggleVoiceCoaching() {
+        if (!this.voiceCoach) return;
+        
+        const isCurrentlyEnabled = this.voiceCoach.isEnabled;
+        this.voiceCoach.setEnabled(!isCurrentlyEnabled);
+        
+        // Update button appearance
+        this.updateVoiceButton(!isCurrentlyEnabled);
+        
+        // Update setup toggle if visible
+        const voiceToggle = document.getElementById('voiceToggle');
+        if (voiceToggle) {
+            voiceToggle.checked = !isCurrentlyEnabled;
+            this.updateVoiceToggleLabel(!isCurrentlyEnabled);
+        }
+        
+        // Test voice if enabling
+        if (!isCurrentlyEnabled) {
+            this.voiceCoach.testVoice();
+        }
+        
+        this.showStatus(`Voice coaching ${!isCurrentlyEnabled ? 'enabled' : 'disabled'}`, 'info');
+    }
+
+    /**
+     * Update voice button appearance
+     */
+    updateVoiceButton(isEnabled) {
+        const voiceToggleBtn = document.getElementById('voiceToggleBtn');
+        if (voiceToggleBtn) {
+            if (isEnabled) {
+                voiceToggleBtn.classList.remove('disabled');
+                voiceToggleBtn.innerHTML = '<i class="fas fa-volume-up"></i> Voice';
+            } else {
+                voiceToggleBtn.classList.add('disabled');
+                voiceToggleBtn.innerHTML = '<i class="fas fa-volume-mute"></i> Voice';
+            }
+        }
+    }
+
+    /**
+     * Update voice toggle label
+     */
+    updateVoiceToggleLabel(isEnabled) {
+        const voiceToggleLabel = document.querySelector('.voice-toggle-label');
+        if (voiceToggleLabel) {
+            voiceToggleLabel.textContent = isEnabled ? 'Voice coaching enabled' : 'Voice coaching disabled';
         }
     }
 

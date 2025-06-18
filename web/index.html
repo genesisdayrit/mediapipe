@@ -137,6 +137,76 @@
             color: white;
         }
 
+        /* Voice Toggle Styles */
+        .voice-toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .voice-toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .voice-toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .voice-toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .voice-toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background: linear-gradient(45deg, #ff4757, #ff3838);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        input:checked + .voice-toggle-slider {
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            border-color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        input:checked + .voice-toggle-slider:before {
+            transform: translateX(30px);
+            background: linear-gradient(45deg, #00ff7f, #00d964);
+        }
+
+        .voice-toggle-label {
+            font-size: 1rem;
+            color: #00d4ff;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        input:checked ~ .voice-toggle-label {
+            color: #00ff7f;
+            text-shadow: 0 0 10px rgba(0, 255, 127, 0.5);
+        }
+
         .setup-actions {
             margin-top: 40px;
             display: flex;
@@ -323,6 +393,32 @@
         }
 
         .top-control-btn.danger:hover {
+            background: rgba(255, 71, 87, 0.15);
+            border-color: rgba(255, 71, 87, 0.3);
+            box-shadow: 0 6px 20px rgba(255, 71, 87, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .top-control-btn.voice-btn {
+            background: rgba(0, 255, 127, 0.1);
+            border-color: rgba(0, 255, 127, 0.2);
+            color: #00ff7f;
+            transition: all 0.3s ease;
+        }
+
+        .top-control-btn.voice-btn.disabled {
+            background: rgba(255, 71, 87, 0.1);
+            border-color: rgba(255, 71, 87, 0.2);
+            color: #ff8fa3;
+            opacity: 0.7;
+        }
+
+        .top-control-btn.voice-btn:hover {
+            background: rgba(0, 255, 127, 0.15);
+            border-color: rgba(0, 255, 127, 0.3);
+            box-shadow: 0 6px 20px rgba(0, 255, 127, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .top-control-btn.voice-btn.disabled:hover {
             background: rgba(255, 71, 87, 0.15);
             border-color: rgba(255, 71, 87, 0.3);
             box-shadow: 0 6px 20px rgba(255, 71, 87, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -1135,6 +1231,17 @@
             </select>
         </div>
         
+        <div class="setup-section">
+            <label for="voiceToggle"><i class="fas fa-volume-up"></i> Voice Coaching</label>
+            <div class="voice-toggle-container">
+                <label class="voice-toggle-switch">
+                    <input type="checkbox" id="voiceToggle" checked>
+                    <span class="voice-toggle-slider"></span>
+                </label>
+                <span class="voice-toggle-label">Voice coaching enabled</span>
+            </div>
+        </div>
+        
         <div class="setup-actions">
             <button id="startBtn" class="primary-btn"><i class="fas fa-rocket"></i> Start Analysis</button>
             <button id="stopBtn" class="secondary-btn hidden"><i class="fas fa-stop"></i> Stop Analysis</button>
@@ -1168,6 +1275,7 @@
                 <div id="exerciseBadge" class="exercise-badge">PUSH-UPS</div>
             </div>
             <div class="top-controls">
+                <button id="voiceToggleBtn" class="top-control-btn voice-btn"><i class="fas fa-volume-up"></i> Voice</button>
                 <button id="stopBtnOverlay" class="top-control-btn danger"><i class="fas fa-stop"></i> Stop</button>
                 <select class="exercise-dropdown" id="exerciseDropdown">
                     <option value="">Select Exercise</option>
