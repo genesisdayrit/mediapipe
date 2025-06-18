@@ -422,10 +422,9 @@ class FitnessCoachApp {
      */
     resetStats() {
         const statsElements = {
-            'sessionTime': '0s',
             'fps': '0',
             'detectionRate': '0%',
-            'goodFormRate': '0%'
+            'formPercentage': '0%'
         };
 
         Object.entries(statsElements).forEach(([id, value]) => {
@@ -434,6 +433,18 @@ class FitnessCoachApp {
                 element.textContent = value;
             }
         });
+
+        // Reset speedometer
+        const gaugeProgress = document.getElementById('gaugeProgress');
+        const gaugeNeedle = document.getElementById('gaugeNeedle');
+        
+        if (gaugeProgress) {
+            gaugeProgress.style.strokeDashoffset = '219.9'; // Reset to 0%
+        }
+        
+        if (gaugeNeedle) {
+            gaugeNeedle.style.transform = 'rotate(-90deg)'; // Reset to 0%
+        }
 
         // Reset feedback
         const primaryFeedback = document.getElementById('primaryFeedback');

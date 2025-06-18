@@ -370,12 +370,15 @@ export class PoseAnalyzer {
             encouragementEl.classList.add('hidden');
         }
 
-        // Update good form percentage
+        // Update good form percentage and speedometer
         if (feedback.sessionStats) {
-            const goodFormEl = document.getElementById('goodFormRate');
-            if (goodFormEl) {
-                goodFormEl.textContent = `${feedback.sessionStats.goodFormPercentage}%`;
+            const formPercentageEl = document.getElementById('formPercentage');
+            if (formPercentageEl) {
+                formPercentageEl.textContent = `${feedback.sessionStats.goodFormPercentage}%`;
             }
+            
+            // Update speedometer gauge
+            this.updateSpeedometer(feedback.sessionStats.goodFormPercentage);
         }
     }
 
@@ -383,13 +386,6 @@ export class PoseAnalyzer {
      * Update statistics UI
      */
     updateStatsUI() {
-        // Update session time
-        const sessionTimeEl = document.getElementById('sessionTime');
-        if (sessionTimeEl && this.sessionStartTime) {
-            const elapsed = Math.floor((Date.now() - this.sessionStartTime) / 1000);
-            sessionTimeEl.textContent = formatTime(elapsed);
-        }
-
         // Update FPS
         const fpsEl = document.getElementById('fps');
         if (fpsEl) {
@@ -403,6 +399,27 @@ export class PoseAnalyzer {
             const rate = this.totalFrames > 0 ? 
                 Math.round((this.detectedFrames / this.totalFrames) * 100) : 0;
             detectionRateEl.textContent = `${rate}%`;
+        }
+    }
+
+    /**
+     * Update speedometer gauge
+     */
+    updateSpeedometer(percentage) {
+        const gaugeProgress = document.getElementById('gaugeProgress');
+        const gaugeNeedle = document.getElementById('gaugeNeedle');
+        
+        if (gaugeProgress) {
+            // Calculate stroke-dashoffset for arc (219.9 is approximately the circumference of the semi-circle)
+            const circumference = 219.9;
+            const offset = circumference - (percentage / 100) * circumference;
+            gaugeProgress.style.strokeDashoffset = offset;
+        }
+        
+        if (gaugeNeedle) {
+            // Calculate needle rotation (-90 to +90 degrees for 0% to 100%)
+            const rotation = -90 + (percentage / 100) * 180;
+            gaugeNeedle.style.transform = `rotate(${rotation}deg)`;
         }
     }
 
