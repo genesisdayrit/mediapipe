@@ -46,7 +46,31 @@ mediapipe-pose-verification/
 
 ## 🚀 Quick Start
 
-### 1. Setup Environment
+### Option 1: Web Application (Recommended) 🌐
+
+The easiest way to use the AI Fitness Coach is through the web interface:
+
+```bash
+# Setup and start Flask app
+chmod +x setup_flask.sh
+./setup_flask.sh
+
+# Start the web application
+python app.py
+```
+
+Then open your browser to: **http://localhost:5000**
+
+Features include:
+- 🎥 Live camera analysis in your browser
+- 🤖 Real-time AI coaching feedback
+- 📊 Session statistics and performance tracking
+- 📱 Works on desktop and mobile devices
+- 🔒 All processing happens locally (no data sent to servers)
+
+### Option 2: Python Scripts 🐍
+
+For advanced users or development:
 
 ```bash
 # Clone the repository
@@ -186,6 +210,58 @@ python tests/test_utils.py
 
 # Run tests with coverage (if pytest-cov installed)
 python -m pytest tests/ --cov=src --cov-report=html
+```
+
+## 🌐 Flask Web Application
+
+### Deployment Options
+
+#### Development Mode
+```bash
+python app.py
+# Access at: http://localhost:5000
+```
+
+#### Production Mode
+```bash
+python run_flask_app.py --mode prod
+# Access at: http://localhost:8000
+```
+
+#### Docker Deployment
+```bash
+# Build and run with Docker Compose
+docker-compose up
+
+# Or build manually
+docker build -t fitness-coach .
+docker run -p 5000:5000 fitness-coach
+```
+
+### API Endpoints
+
+The Flask app provides several API endpoints:
+
+- **`GET /api/health`** - Health check
+- **`GET /api/exercises`** - Get exercise configurations and tips
+- **`POST /api/session/start`** - Start a new workout session
+- **`POST /api/session/end`** - End workout session with stats
+- **`POST /api/feedback`** - Submit user feedback
+- **`GET /api/stats/summary`** - Get usage statistics
+
+### Example API Usage
+
+```bash
+# Health check
+curl http://localhost:5000/api/health
+
+# Get exercise info
+curl http://localhost:5000/api/exercises
+
+# Start a session
+curl -X POST http://localhost:5000/api/session/start \
+  -H "Content-Type: application/json" \
+  -d '{"exercise_type": "pushup"}'
 ```
 
 ## 🔧 Customization
