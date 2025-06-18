@@ -43,7 +43,7 @@
 
         /* Glassmorphic overlay styles */
         .glass-overlay {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
@@ -54,8 +54,7 @@
         }
 
         .glass-overlay:hover {
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-2px);
+            background: rgba(0, 0, 0, 0.5);
             border-color: rgba(255, 255, 255, 0.2);
         }
 
@@ -119,7 +118,7 @@
             padding: 18px 25px;
             border: none;
             border-radius: 15px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
             color: white;
             font-size: 16px;
@@ -172,7 +171,6 @@
         }
 
         .primary-btn:hover, .secondary-btn:hover {
-            transform: translateY(-3px);
             box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
         }
 
@@ -218,7 +216,7 @@
         /* Top overlay bar */
         .top-overlay {
             position: fixed;
-            top: 20px;
+            top: -15px;
             left: 20px;
             right: 20px;
             z-index: 50;
@@ -226,6 +224,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 20px 30px;
+            padding-top: 40px;
         }
 
         .app-title {
@@ -247,12 +246,48 @@
         .exercise-badge {
             padding: 12px 20px;
             border-radius: 25px;
-            background: rgba(0, 212, 255, 0.2);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            font-size: 1rem;
+            background: transparent;
+            border: none;
+            font-size: 1.4rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
+            text-shadow: 0 2px 10px rgba(0, 212, 255, 0.8), 0 0 20px rgba(0, 212, 255, 0.4);
+            color: #00d4ff;
+        }
+
+        .exercise-dropdown {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(100, 255, 218, 0.1);
+            border-radius: 12px;
+            padding: 12px 20px;
+            color: #64ffda;
+            font-size: 1.1rem;
+            font-weight: 500;
+            backdrop-filter: blur(20px);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 180px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .exercise-dropdown:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(100, 255, 218, 0.3);
+            box-shadow: 0 6px 20px rgba(100, 255, 218, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .exercise-dropdown:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(100, 255, 218, 0.4);
+            box-shadow: 0 6px 20px rgba(100, 255, 218, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+        .exercise-dropdown option {
+            background: rgba(0, 0, 0, 0.9);
+            color: #64ffda;
+            padding: 10px;
         }
 
         .top-controls {
@@ -262,53 +297,108 @@
         }
 
         .top-control-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
             padding: 8px 16px;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(20px);
             font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
         .top-control-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
 
         .top-control-btn.danger {
-            background: rgba(255, 0, 68, 0.2);
-            border-color: rgba(255, 0, 68, 0.3);
+            background: rgba(255, 71, 87, 0.1);
+            border-color: rgba(255, 71, 87, 0.2);
+            color: #ff8fa3;
         }
 
         .top-control-btn.danger:hover {
-            background: rgba(255, 0, 68, 0.3);
-            box-shadow: 0 5px 15px rgba(255, 0, 68, 0.3);
+            background: rgba(255, 71, 87, 0.15);
+            border-color: rgba(255, 71, 87, 0.3);
+            box-shadow: 0 6px 20px rgba(255, 71, 87, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
-        /* Bottom left stats panel */
-        .stats-overlay {
+        /* Font Awesome icon spacing */
+        .fas, .far, .fab {
+            margin-right: 6px;
+        }
+
+        .top-control-btn .fas {
+            margin-right: 4px;
+        }
+
+        .instruction-icon .fas {
+            margin-right: 0;
+        }
+
+        /* Bottom dashboard container */
+        .bottom-dashboard {
             position: fixed;
-            bottom: 20px;
+            bottom: -15px;
             left: 20px;
+            right: 20px;
             z-index: 50;
-            padding: 20px;
-            min-width: 280px;
+            padding: 12px 20px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
         }
 
-        .stats-title {
-            display: none; /* Hide stats title */
+        .dashboard-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .gauge-section {
+            flex: 0 0 auto;
+            min-width: 250px;
+            align-items: center;
+        }
+
+        .feedback-section {
+            flex: 1;
+            text-align: center;
+            height: 100%; 
+            min-height: 200px;
+            max-height: 700px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .tips-section {
+            margin-top: 30px;
+            flex: 0 0 auto;
+            min-width: 280px;
+            max-width: 350px;
+            width: 280px;
         }
 
         .form-gauge-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 8px;
         }
 
         .speedometer-container {
@@ -364,15 +454,11 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 16px;
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 0;
+            background: transparent;
+            border-radius: 0;
+            border: none;
             transition: all 0.3s ease;
-        }
-
-        .detection-info:hover {
-            background: rgba(255, 255, 255, 0.08);
         }
 
         .detection-label {
@@ -388,29 +474,29 @@
             text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
         }
 
-        /* Center feedback panel - above bottom controls */
-        .feedback-overlay {
-            position: fixed;
-            bottom: 180px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 50;
-            padding: 25px 35px;
-            max-width: 700px;
-            width: 90%;
-            text-align: center;
-        }
-
         .primary-feedback {
             font-size: 1.5rem;
             font-weight: bold;
-            margin-bottom: 20px;
-            padding: 25px;
+            margin: 0;
+            padding: 20px;
             border-radius: 20px;
             text-align: center;
             position: relative;
             overflow: hidden;
             transition: all 0.3s ease;
+            height: 100%; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .primary-feedback > * {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
         }
 
         .primary-feedback::before {
@@ -459,19 +545,7 @@
 
 
 
-        /* Feedback tips overlay */
-        .tips-overlay {
-            position: fixed;
-            bottom: 250px;
-            right: 20px;
-            z-index: 50;
-            padding: 20px 25px;
-            max-width: 350px;
-            border-radius: 20px;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+
 
         .tips-title {
             font-size: 1.1rem;
@@ -493,16 +567,29 @@
 
         .feedback-tips li {
             margin: 8px 0;
-            padding: 8px 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            border-left: 3px solid #00d4ff;
+            padding: 4px 0;
+            background: transparent;
+            border-radius: 0;
+            border: none;
             transition: all 0.3s ease;
         }
 
+        /* Flexbox utility classes */
+        .flex-1 {
+            flex: 1;
+        }
+
+        .justify-center {
+            justify-content: center;
+        }
+
+        .align-center {
+            align-items: center;
+        }
+
         .feedback-tips li:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateX(5px);
+            background: transparent;
+            color: #64ffda;
         }
 
         /* Encouragement message */
@@ -584,17 +671,21 @@
         }
 
         .instructions-content {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.4));
             backdrop-filter: blur(25px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: none;
             border-radius: 25px;
-            padding: 40px;
-            max-width: 600px;
+            padding: 50px;
+            max-width: 700px;
             width: 90%;
             text-align: center;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
 
         .instructions-content::before {
@@ -609,8 +700,8 @@
         }
 
         .instructions-title {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
+            font-size: 3.5rem;
+            margin-bottom: 30px;
             background: linear-gradient(45deg, #00d4ff, #ff00d4);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -620,31 +711,31 @@
 
         .instructions-list {
             text-align: left;
-            margin: 30px 0;
-            font-size: 1.1rem;
-            line-height: 1.6;
+            margin: 40px 0;
+            font-size: 1.5rem;
+            line-height: 1.7;
+            width: 100%;
         }
 
         .instruction-item {
             display: flex;
             align-items: flex-start;
-            margin: 20px 0;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.05);
+            margin: 25px 0;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
             border-radius: 15px;
-            border-left: 4px solid #00d4ff;
+            border: none;
             transition: all 0.3s ease;
         }
 
         .instruction-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateX(5px);
+            background: rgba(0, 0, 0, 0.5);
         }
 
         .instruction-icon {
-            font-size: 1.5rem;
-            margin-right: 15px;
-            min-width: 40px;
+            font-size: 2.5rem;
+            margin-right: 20px;
+            min-width: 50px;
         }
 
         .instruction-text {
@@ -673,7 +764,6 @@
         }
 
         .start-workout-btn:hover {
-            transform: translateY(-3px);
             box-shadow: 0 15px 40px rgba(0, 255, 127, 0.4);
         }
 
@@ -747,9 +837,33 @@
 
         /* Mobile-first responsive design - 60% video, 20% top, 20% bottom */
         @media (max-width: 768px) {
-            /* Hide tips overlay completely */
-            .tips-overlay {
-                display: none;
+            /* Bottom dashboard mobile */
+            .bottom-dashboard {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px;
+                left: 10px;
+                right: 10px;
+            }
+
+            .dashboard-section {
+                max-width: none;
+                width: 100%;
+            }
+
+            .gauge-section {
+                order: 1;
+                align-items: center;
+                max-width: none;
+            }
+
+            .feedback-section {
+                order: 2;
+            }
+
+            .tips-section {
+                order: 3;
+                max-width: none;
             }
             
             /* Ultra-minimal top overlay - max 8vh */
@@ -793,24 +907,6 @@
                 height: 74vh;
             }
             
-            /* Bottom area - compact speedometer */
-            .stats-overlay {
-                position: fixed;
-                bottom: 6vh;
-                left: 5px;
-                right: 5px;
-                width: auto;
-                padding: 8px;
-                min-width: auto;
-                height: 6vh;
-                max-height: 45px;
-                overflow: hidden;
-                top: auto;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
-            
             .form-gauge-container {
                 flex-direction: row;
                 gap: 10px;
@@ -818,52 +914,33 @@
             }
             
             .speedometer-container {
-                width: 40px;
-                height: 24px;
+                width: 60px;
+                height: 36px;
                 flex-shrink: 0;
             }
             
             .gauge-percentage {
-                font-size: 8px;
+                font-size: 10px;
             }
             
             .gauge-label {
-                font-size: 4px;
+                font-size: 6px;
                 letter-spacing: 1px;
             }
             
             .detection-info {
-                padding: 2px 6px;
+                padding: 4px 8px;
                 border-radius: 6px;
-                gap: 4px;
+                gap: 6px;
                 flex-shrink: 0;
             }
             
             .detection-label {
-                font-size: 0.6rem;
-                white-space: nowrap;
+                font-size: 0.8rem;
             }
             
             .detection-value {
-                font-size: 0.7rem;
-                line-height: 1;
-            }
-            
-            /* Feedback above bottom controls - max 6vh */
-            .feedback-overlay {
-                position: fixed;
-                bottom: 12vh;
-                left: 0;
-                right: 0;
-                padding: 8px 10px;
-                max-width: none;
-                width: 100%;
-                height: 6vh;
-                max-height: 45px;
-                transform: none;
-                overflow: hidden;
-                background: rgba(0, 0, 0, 0.6);
-                backdrop-filter: blur(10px);
+                font-size: 0.9rem;
             }
             
             .primary-feedback {
@@ -978,48 +1055,39 @@
                 height: 86vh;
             }
             
-            /* Stack bottom elements vertically - max 8vh total */
-            .stats-overlay {
-                bottom: 4vh;
-                left: 5px;
-                right: 5px;
-                width: auto;
-                height: 4vh;
-                max-height: 30px;
-                padding: 4px;
+            .bottom-dashboard {
+                padding: 10px;
+                gap: 10px;
             }
             
             .speedometer-container {
-                width: 30px;
-                height: 18px;
+                width: 40px;
+                height: 24px;
             }
             
             .gauge-percentage {
-                font-size: 6px;
+                font-size: 8px;
             }
             
             .gauge-label {
-                font-size: 3px;
+                font-size: 4px;
             }
             
             .detection-info {
-                padding: 1px 4px;
-                gap: 2px;
+                padding: 2px 6px;
+                gap: 4px;
             }
             
             .detection-label {
-                font-size: 0.5rem;
-            }
-            
-            .detection-value {
                 font-size: 0.6rem;
             }
             
-            .feedback-overlay {
-                bottom: 0;
-                height: 4vh;
-                max-height: 30px;
-                padding: 4px 8px;
+            .detection-value {
+                font-size: 0.7rem;
+            }
+            
+            .tips-section {
+                display: none; /* Hide on very small screens */
             }
             
             .primary-feedback {
@@ -1049,11 +1117,11 @@
 <body>
     <!-- Setup Interface -->
     <div id="setupContainer" class="setup-container glass-overlay">
-        <h1>🚀 AI FITNESS COACH</h1>
+        <h1><i class="fas fa-rocket"></i> FITMAXXING AI COACH</h1>
         <p>Real-time pose analysis with intelligent coaching feedback</p>
         
         <div class="setup-section">
-            <label for="exerciseSelect">🏋️ Exercise Type</label>
+            <label for="exerciseSelect"><i class="fas fa-dumbbell"></i> Exercise Type</label>
             <select id="exerciseSelect">
                 <option value="pushup">Push-ups</option>
                 <option value="handstand">Handstand</option>
@@ -1061,27 +1129,27 @@
         </div>
         
         <div class="setup-section">
-            <label for="cameraSelect">📷 Camera Device</label>
+            <label for="cameraSelect"><i class="fas fa-camera"></i> Camera Device</label>
             <select id="cameraSelect">
                 <option value="">Loading cameras...</option>
             </select>
         </div>
         
         <div class="setup-actions">
-            <button id="startBtn" class="primary-btn">🚀 Start Analysis</button>
-            <button id="stopBtn" class="secondary-btn hidden">⏹️ Stop Analysis</button>
+            <button id="startBtn" class="primary-btn"><i class="fas fa-rocket"></i> Start Analysis</button>
+            <button id="stopBtn" class="secondary-btn hidden"><i class="fas fa-stop"></i> Stop Analysis</button>
         </div>
     </div>
 
     <!-- Loading Screen -->
     <div id="loadingMessage" class="loading-overlay">
         <div class="loading-spinner"></div>
-        <p style="font-size: 1.2rem;">🔄 Loading MediaPipe models...</p>
+        <p style="font-size: 1.2rem;"><i class="fas fa-sync-alt fa-spin"></i> Loading MediaPipe models...</p>
     </div>
 
     <!-- Error Message -->
     <div id="errorMessage" class="error-message hidden">
-        <h3>❌ Error</h3>
+        <h3><i class="fas fa-exclamation-triangle"></i> Error</h3>
         <p id="errorText">An error occurred</p>
     </div>
 
@@ -1095,78 +1163,82 @@
 
         <!-- Top Overlay Bar -->
         <div class="top-overlay glass-overlay">
-            <div class="app-title">🤖 AI FITNESS COACH</div>
+            <div class="app-title"><i class="fas fa-robot"></i>FITMAXXING AI FITNESS COACH</div>
             <div class="exercise-info">
                 <div id="exerciseBadge" class="exercise-badge">PUSH-UPS</div>
             </div>
             <div class="top-controls">
-                <button id="stopBtnOverlay" class="top-control-btn danger">⏹️ Stop</button>
-                <button id="pauseBtn" class="top-control-btn">⏸️ Pause</button>
-                <button id="switchExerciseBtn" class="top-control-btn">🔄 Switch</button>
+                <button id="stopBtnOverlay" class="top-control-btn danger"><i class="fas fa-stop"></i> Stop</button>
+                <select class="exercise-dropdown" id="exerciseDropdown">
+                    <option value="">Select Exercise</option>
+                    <option value="pushup">Push-ups</option>
+                    <option value="handstand">Handstand</option>
+                </select>
             </div>
         </div>
 
-        <!-- Left Stats Overlay -->
-        <div class="stats-overlay glass-overlay">
-            <div class="form-gauge-container">
-                <div class="speedometer-container">
-                    <svg class="speedometer" viewBox="0 0 200 120">
-                        <defs>
-                            <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" style="stop-color:#ff4757;stop-opacity:1" />
-                                <stop offset="50%" style="stop-color:#ffa500;stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:#00ff7f;stop-opacity:1" />
-                            </linearGradient>
-                        </defs>
-                        <!-- Background arc -->
-                        <path class="gauge-bg" d="M 30 100 A 70 70 0 0 1 170 100" 
-                              stroke="rgba(255,255,255,0.1)" 
-                              stroke-width="8" 
-                              fill="none"/>
-                        <!-- Progress arc -->
-                        <path id="gaugeProgress" class="gauge-progress" d="M 30 100 A 70 70 0 0 1 170 100" 
-                              stroke="url(#gaugeGradient)" 
-                              stroke-width="8" 
-                              fill="none"
-                              stroke-dasharray="219.9 219.9"
-                              stroke-dashoffset="219.9"/>
-                        <!-- Center text -->
-                        <text class="gauge-text" x="100" y="85" text-anchor="middle">
-                            <tspan id="formPercentage" class="gauge-percentage">0%</tspan>
-                            <tspan x="100" dy="35" class="gauge-label">FORM</tspan>
-                        </text>
-                        <!-- Needle -->
-                        <line id="gaugeNeedle" class="gauge-needle" x1="100" y1="100" x2="100" y2="40" 
-                              stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
-                        <circle class="gauge-center" cx="100" cy="100" r="4" fill="#00d4ff"/>
-                    </svg>
+        <!-- Bottom Dashboard Container -->
+        <div class="bottom-dashboard glass-overlay">
+            <!-- Left: Form Gauge Section -->
+            <div class="">
+                <div class="">
+                    <div class="">
+                        <svg class="speedometer" viewBox="0 0 200 120">
+                            <defs>
+                                <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" style="stop-color:#ff4757;stop-opacity:1" />
+                                    <stop offset="50%" style="stop-color:#ffa500;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#00ff7f;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <!-- Background arc -->
+                            <path class="gauge-bg" d="M 30 100 A 70 70 0 0 1 170 100" 
+                                  stroke="rgba(255,255,255,0.1)" 
+                                  stroke-width="8" 
+                                  fill="none"/>
+                            <!-- Progress arc -->
+                            <path id="gaugeProgress" class="gauge-progress" d="M 30 100 A 70 70 0 0 1 170 100" 
+                                  stroke="url(#gaugeGradient)" 
+                                  stroke-width="8" 
+                                  fill="none"
+                                  stroke-dasharray="219.9 219.9"
+                                  stroke-dashoffset="219.9"/>
+                            <!-- Center text -->
+                            <text class="gauge-text" x="100" y="85" text-anchor="middle">
+                                <tspan id="formPercentage" class="gauge-percentage">0%</tspan>
+                                <tspan x="100" dy="35" class="gauge-label">FORM</tspan>
+                            </text>
+                            <!-- Needle -->
+                            <line id="gaugeNeedle" class="gauge-needle" x1="100" y1="100" x2="100" y2="40" 
+                                  stroke="#00d4ff" stroke-width="2" stroke-linecap="round"/>
+                            <circle class="gauge-center" cx="100" cy="100" r="4" fill="#00d4ff"/>
+                        </svg>
+                    </div>
+                    <div class="detection-info">
+                        <span class="detection-label">Detection:</span>
+                        <span id="detectionRate" class="detection-value">0%</span>
+                    </div>
                 </div>
-                <div class="detection-info">
-                    <span class="detection-label">Detection:</span>
-                    <span id="detectionRate" class="detection-value">0%</span>
+            </div>
+
+            <!-- Center: Feedback Section -->
+            <div class="flex-1 justify-center align-center feedback-section">
+                <div id="primaryFeedback" class="primary-feedback minor">
+                    <i class="fas fa-running"></i> Get ready to start your workout!
+                </div>
+                <div id="encouragementMessage" class="encouragement hidden">
+                    <i class="fas fa-fist-raised"></i> Keep up the great work!
                 </div>
             </div>
-        </div>
 
-
-
-        <!-- Center Feedback Overlay -->
-        <div class="feedback-overlay glass-overlay">
-            <div id="primaryFeedback" class="primary-feedback minor">
-                🏃 Get ready to start your workout!
-            </div>
-            <div id="encouragementMessage" class="encouragement hidden">
-                💪 Keep up the great work!
-            </div>
-        </div>
-
-        <!-- Right Tips Overlay -->
-        <div id="tipsOverlay" class="tips-overlay glass-overlay">
-            <div class="tips-title">💡 Pro Tips</div>
-            <div class="feedback-tips">
-                <ul id="feedbackTips">
-                    <!-- Tips will be populated by JavaScript -->
-                </ul>
+            <!-- Right: Tips Section -->
+            <div id="tipsOverlay" class=" tips-section">
+                <div class="tips-title"><i class="fas fa-lightbulb"></i> Pro Tips</div>
+                <div class="feedback-tips">
+                    <ul id="feedbackTips">
+                        <!-- Tips will be populated by JavaScript -->
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -1174,32 +1246,32 @@
     <!-- Instructions Modal -->
     <div id="instructionsModal" class="instructions-modal hidden">
         <div class="instructions-content">
-            <h2 class="instructions-title">🏋️ Get Ready to Workout!</h2>
+            <h2 class="instructions-title"><i class="fas fa-dumbbell"></i> Get Ready to Workout!</h2>
             
             <div class="instructions-list">
                 <div class="instruction-item">
-                    <div class="instruction-icon">📷</div>
+                    <div class="instruction-icon"><i class="fas fa-camera"></i></div>
                     <div class="instruction-text">
                         <strong>Position yourself:</strong> Make sure your entire body is visible in the camera frame. Stand back if needed so your full form can be tracked from head to toe.
                     </div>
                 </div>
                 
                 <div class="instruction-item">
-                    <div class="instruction-icon">🏋️</div>
+                    <div class="instruction-icon"><i class="fas fa-dumbbell"></i></div>
                     <div class="instruction-text">
                         <strong>Perform the exercise:</strong> Start your <span id="currentExercise">handstand</span> movements when you're ready. Take your time and focus on proper form.
                     </div>
                 </div>
                 
                 <div class="instruction-item">
-                    <div class="instruction-icon">🎯</div>
+                    <div class="instruction-icon"><i class="fas fa-bullseye"></i></div>
                     <div class="instruction-text">
                         <strong>Listen to your coach:</strong> Pay attention to the real-time feedback and suggestions. The AI will guide you on improving your form and technique.
                     </div>
                 </div>
                 
                 <div class="instruction-item">
-                    <div class="instruction-icon">⚡</div>
+                    <div class="instruction-icon"><i class="fas fa-bolt"></i></div>
                     <div class="instruction-text">
                         <strong>Stay focused:</strong> The system works best when you maintain steady, controlled movements. Don't rush - quality over quantity!
                     </div>
@@ -1207,10 +1279,13 @@
             </div>
             
             <button id="startWorkoutBtn" class="start-workout-btn">
-                🚀 Start Workout
+                <i class="fas fa-rocket"></i> Start Workout
             </button>
         </div>
     </div>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- MediaPipe Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>

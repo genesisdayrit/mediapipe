@@ -233,7 +233,7 @@ class FitnessCoachApp {
         // Reset pause button text
         const pauseBtn = document.getElementById('pauseBtn');
         if (pauseBtn) {
-            pauseBtn.textContent = '⏸️ Pause';
+            pauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
         }
         
         console.log('✅ Pose analysis stopped');
@@ -248,7 +248,7 @@ class FitnessCoachApp {
         
         if (startBtn) {
             startBtn.disabled = isRunning;
-            startBtn.textContent = isRunning ? '🔄 Running...' : '🎥 Start Analysis';
+            startBtn.innerHTML = isRunning ? '<i class="fas fa-sync-alt fa-spin"></i> Running...' : '<i class="fas fa-video"></i> Start Analysis';
         }
         
         if (stopBtn) {
@@ -323,7 +323,7 @@ class FitnessCoachApp {
     setupOverlayControls() {
         const stopBtnOverlay = document.getElementById('stopBtnOverlay');
         const pauseBtn = document.getElementById('pauseBtn');
-        const switchExerciseBtn = document.getElementById('switchExerciseBtn');
+        const exerciseDropdown = document.getElementById('exerciseDropdown');
 
         if (stopBtnOverlay) {
             stopBtnOverlay.addEventListener('click', () => this.stopAnalysis());
@@ -333,8 +333,8 @@ class FitnessCoachApp {
             pauseBtn.addEventListener('click', () => this.togglePause());
         }
 
-        if (switchExerciseBtn) {
-            switchExerciseBtn.addEventListener('click', () => this.switchExercise());
+        if (exerciseDropdown) {
+            exerciseDropdown.addEventListener('change', (e) => this.changeExercise(e.target.value));
         }
     }
 
@@ -346,12 +346,12 @@ class FitnessCoachApp {
         if (this.analyzer && this.analyzer.isRunning) {
             if (this.isPaused) {
                 this.analyzer.resume?.();
-                if (pauseBtn) pauseBtn.textContent = '⏸️ Pause';
+                if (pauseBtn) pauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
                 this.isPaused = false;
                 this.showStatus('Analysis resumed', 'info');
             } else {
                 this.analyzer.pause?.();
-                if (pauseBtn) pauseBtn.textContent = '▶️ Resume';
+                if (pauseBtn) pauseBtn.innerHTML = '<i class="fas fa-play"></i> Resume';
                 this.isPaused = true;
                 this.showStatus('Analysis paused', 'warning');
             }
@@ -359,15 +359,14 @@ class FitnessCoachApp {
     }
 
     /**
-     * Switch exercise type
+     * Change exercise type from dropdown
      */
-    switchExercise() {
+    changeExercise(newValue) {
         const exerciseSelect = document.getElementById('exerciseSelect');
+        const exerciseDropdown = document.getElementById('exerciseDropdown');
         
-        if (exerciseSelect) {
-            // Toggle between pushup and handstand
-            const currentValue = exerciseSelect.value;
-            const newValue = currentValue === 'pushup' ? 'handstand' : 'pushup';
+        if (newValue && exerciseSelect) {
+            // Update the main exercise select
             exerciseSelect.value = newValue;
             
             // Update the exercise badge
@@ -376,6 +375,11 @@ class FitnessCoachApp {
             // Update the analyzer if it exists
             if (this.analyzer) {
                 this.analyzer.setExerciseType(newValue);
+            }
+            
+            // Reset the dropdown to default
+            if (exerciseDropdown) {
+                exerciseDropdown.value = '';
             }
             
             this.showStatus(`Switched to ${newValue}`, 'info');
@@ -449,7 +453,7 @@ class FitnessCoachApp {
         // Reset feedback
         const primaryFeedback = document.getElementById('primaryFeedback');
         if (primaryFeedback) {
-            primaryFeedback.textContent = '🏃 Get ready to start your workout!';
+            primaryFeedback.innerHTML = '<i class="fas fa-running"></i> Get ready to start your workout!';
             primaryFeedback.className = 'primary-feedback minor';
         }
 
