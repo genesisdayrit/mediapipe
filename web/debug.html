@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Fitness Coach - Debug Mode</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated background particles */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 255, 198, 0.2) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes float {
+            0%, 100% { opacity: 0.3; transform: translateY(0px) rotate(0deg); }
+            50% { opacity: 0.8; transform: translateY(-20px) rotate(2deg); }
+        }
+        
+        .debug-container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+            height: 100vh;
+            padding: 20px;
+        }
+        
+        .main-app {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .debug-panel {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .debug-log {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            color: #00ff00;
+        }
+        
+        .debug-log .error {
+            color: #ff6b6b;
+        }
+        
+        .debug-log .warning {
+            color: #feca57;
+        }
+        
+        .debug-log .info {
+            color: #74b9ff;
+        }
+        
+        .debug-log .success {
+            color: #00b894;
+        }
+        
+        .debug-controls {
+            margin-bottom: 20px;
+        }
+        
+        .debug-controls button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        
+        .debug-controls button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        @media (max-width: 1200px) {
+            .debug-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .debug-panel {
+                height: 40vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <div class="main-app">
+            <h1>🤖 AI Fitness Coach - Debug Mode</h1>
+            
+            <!-- Include the main app content -->
+            <div id="errorMessage" class="error-message hidden">
+                <p id="errorText">An error occurred</p>
+            </div>
+
+            <div id="setupContainer" class="setup-container">
+                <h2>🎥 Camera Setup</h2>
+                <div class="setup-section">
+                    <label for="cameraSelect">Select Camera:</label>
+                    <select id="cameraSelect">
+                        <option value="">Loading cameras...</option>
+                    </select>
+                </div>
+                
+                <div class="setup-section">
+                    <label for="exerciseSelect">Exercise Type:</label>
+                    <select id="exerciseSelect">
+                        <option value="pushup">Push-ups</option>
+                        <option value="handstand">Handstand</option>
+                    </select>
+                </div>
+                
+                <div class="setup-actions">
+                    <button id="startBtn" class="primary-btn">🚀 Start Analysis</button>
+                    <button id="stopBtn" class="secondary-btn hidden">⏹️ Stop Analysis</button>
+                </div>
+            </div>
+
+            <div id="mainInterface" class="main-interface hidden">
+                <div class="video-container">
+                    <video id="inputVideo" autoplay muted playsinline></video>
+                    <canvas id="outputCanvas"></canvas>
+                </div>
+
+                <div class="feedback-panel">
+                    <div id="primaryFeedback" class="primary-feedback">🏃 Get ready to start your workout!</div>
+                    <div id="feedbackTips" class="feedback-tips"></div>
+                    <div id="encouragementMessage" class="encouragement hidden"></div>
+                </div>
+
+                <div class="stats-panel">
+                    <div class="stat-item">
+                        <span class="stat-label">Session Time:</span>
+                        <span id="sessionTime" class="stat-value">0s</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">FPS:</span>
+                        <span id="fps" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Detection Rate:</span>
+                        <span id="detectionRate" class="stat-value">0%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Good Form:</span>
+                        <span id="goodFormRate" class="stat-value">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="debug-panel">
+            <h3>🔍 Debug Console</h3>
+            <div class="debug-controls">
+                <button onclick="clearDebugLog()">Clear</button>
+                <button onclick="toggleAutoScroll()">Auto-scroll: <span id="autoScrollStatus">ON</span></button>
+                <button onclick="downloadLog()">Download Log</button>
+            </div>
+            <div id="debugLog" class="debug-log"></div>
+        </div>
+    </div>
+
+    <!-- MediaPipe CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
+    <!-- App JavaScript -->
+
+    <script>
+        // Debug logging setup
+        let debugAutoScroll = true;
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn,
+            info: console.info
+        };
+
+        function appendToDebugLog(message, type = 'log') {
+            const debugLog = document.getElementById('debugLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            debugLog.appendChild(logEntry);
+            
+            if (debugAutoScroll) {
+                debugLog.scrollTop = debugLog.scrollHeight;
+            }
+        }
+
+        // Override console methods
+        console.log = function(...args) {
+            originalConsole.log.apply(console, args);
+            appendToDebugLog(args.join(' '), 'log');
+        };
+
+        console.error = function(...args) {
+            originalConsole.error.apply(console, args);
+            appendToDebugLog(args.join(' '), 'error');
+        };
+
+        console.warn = function(...args) {
+            originalConsole.warn.apply(console, args);
+            appendToDebugLog(args.join(' '), 'warning');
+        };
+
+        console.info = function(...args) {
+            originalConsole.info.apply(console, args);
+            appendToDebugLog(args.join(' '), 'info');
+        };
+
+        function clearDebugLog() {
+            document.getElementById('debugLog').innerHTML = '';
+        }
+
+        function toggleAutoScroll() {
+            debugAutoScroll = !debugAutoScroll;
+            document.getElementById('autoScrollStatus').textContent = debugAutoScroll ? 'ON' : 'OFF';
+        }
+
+        function downloadLog() {
+            const debugLog = document.getElementById('debugLog');
+            const logText = debugLog.textContent;
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `fitness-coach-debug-${new Date().toISOString().slice(0, 19)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Log initial debug message
+        console.log('🐛 Debug mode activated! All console output will appear here.');
+    </script>
+
+    <script type="module" src="js/app.js"></script>
+
+    <style>
+        /* Additional styles for the main app */
+        .setup-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .setup-section {
+            margin: 20px 0;
+        }
+
+        .setup-section label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .setup-section select {
+            width: 100%;
+            max-width: 300px;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 16px;
+        }
+
+        .setup-actions {
+            margin-top: 30px;
+        }
+
+        .primary-btn, .secondary-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+
+        .primary-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .secondary-btn {
+            background: linear-gradient(45deg, #f44336, #da190b);
+            color: white;
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .secondary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto 20px;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #inputVideo, #outputCanvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        #outputCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .feedback-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .primary-feedback {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .primary-feedback.critical {
+            background: rgba(244, 67, 54, 0.2);
+            border: 2px solid #f44336;
+        }
+
+        .primary-feedback.major {
+            background: rgba(255, 152, 0, 0.2);
+            border: 2px solid #ff9800;
+        }
+
+        .primary-feedback.minor {
+            background: rgba(33, 150, 243, 0.2);
+            border: 2px solid #2196f3;
+        }
+
+        .primary-feedback.success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid #4caf50;
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+            opacity: 0.8;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .error-message {
+            background: rgba(244, 67, 54, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</body>
+</html> 

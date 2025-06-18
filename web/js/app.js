@@ -9,8 +9,9 @@ import { getAvailableCameras, requestCameraPermission } from './utils.js';
 
 class FitnessCoachApp {
     constructor() {
-        this.analyzer = new PoseAnalyzer();
+        this.analyzer = null;
         this.isRunning = false;
+        this.isPaused = false;
         this.currentExercise = 'pushup';
         
         this.initializeApp();
@@ -52,7 +53,9 @@ class FitnessCoachApp {
         if (exerciseSelect) {
             exerciseSelect.addEventListener('change', (e) => {
                 this.currentExercise = e.target.value;
-                this.analyzer.setExerciseType(this.currentExercise);
+                if (this.analyzer) {
+                    this.analyzer.setExerciseType(this.currentExercise);
+                }
                 this.updateExerciseTips();
                 console.log(`Exercise changed to: ${this.currentExercise}`);
             });
@@ -148,6 +151,7 @@ class FitnessCoachApp {
 
         try {
             console.log('🎬 Starting pose analysis...');
+            this.showStatus('Initializing camera...', 'info');
             
             const cameraSelect = document.getElementById('cameraSelect');
             const selectedCamera = cameraSelect ? cameraSelect.value : null;
@@ -157,26 +161,42 @@ class FitnessCoachApp {
                 return;
             }
 
+            console.log('📷 Selected camera:', selectedCamera);
+
             // Update UI
             this.updateStartStopButtons(true);
             this.hideError();
             this.showMainInterface();
+            this.showStatus('Starting camera...', 'info');
+
+            // Initialize analyzer if not created
+            if (!this.analyzer) {
+                console.log('🚀 Creating pose analyzer...');
+                this.analyzer = new PoseAnalyzer();
+            }
 
             // Start the analyzer
+            console.log('🚀 Starting pose analyzer...');
             const success = await this.analyzer.start(selectedCamera);
             
             if (success) {
                 this.isRunning = true;
                 console.log('✅ Pose analysis started successfully');
+                this.showStatus('Analysis running - Move into view!', 'success');
+                
+                // Add analysis status overlay
+                this.addAnalysisOverlay();
             } else {
                 this.updateStartStopButtons(false);
                 this.showError('Failed to start pose analysis. Please try again.');
+                this.showStatus('Failed to start analysis', 'error');
             }
             
         } catch (error) {
             console.error('❌ Error starting analysis:', error);
             this.updateStartStopButtons(false);
             this.showError('Failed to start camera. Please check permissions and try again.');
+            this.showStatus('Camera access failed', 'error');
         }
     }
 
@@ -188,12 +208,33 @@ class FitnessCoachApp {
 
         console.log('⏹️ Stopping pose analysis...');
         
-        this.analyzer.stop();
+        if (this.analyzer) {
+            this.analyzer.stop();
+        }
         this.isRunning = false;
+        this.isPaused = false;
         
         // Update UI
         this.updateStartStopButtons(false);
         this.resetStats();
+        
+        // Hide main interface and show setup
+        const setupContainer = document.getElementById('setupContainer');
+        const mainInterface = document.getElementById('mainInterface');
+        
+        if (setupContainer) {
+            setupContainer.classList.remove('hidden');
+        }
+        
+        if (mainInterface) {
+            mainInterface.classList.add('hidden');
+        }
+        
+        // Reset pause button text
+        const pauseBtn = document.getElementById('pauseBtn');
+        if (pauseBtn) {
+            pauseBtn.textContent = '⏸️ Pause';
+        }
         
         console.log('✅ Pose analysis stopped');
     }
@@ -240,9 +281,104 @@ class FitnessCoachApp {
      * Show main interface
      */
     showMainInterface() {
+        const setupContainer = document.getElementById('setupContainer');
         const mainInterface = document.getElementById('mainInterface');
+        const loadingMessage = document.getElementById('loadingMessage');
+        
+        if (setupContainer) {
+            setupContainer.classList.add('hidden');
+        }
+        
         if (mainInterface) {
             mainInterface.classList.remove('hidden');
+        }
+        
+        if (loadingMessage) {
+            loadingMessage.classList.add('hidden');
+        }
+        
+        // Update exercise badge
+        this.updateExerciseBadge();
+        
+        // Setup overlay controls
+        this.setupOverlayControls();
+    }
+
+    /**
+     * Update exercise badge in the overlay
+     */
+    updateExerciseBadge() {
+        const exerciseSelect = document.getElementById('exerciseSelect');
+        const exerciseBadge = document.getElementById('exerciseBadge');
+        
+        if (exerciseSelect && exerciseBadge) {
+            const exerciseType = exerciseSelect.value;
+            exerciseBadge.textContent = exerciseType.toUpperCase();
+        }
+    }
+
+    /**
+     * Setup overlay control event listeners
+     */
+    setupOverlayControls() {
+        const stopBtnOverlay = document.getElementById('stopBtnOverlay');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const switchExerciseBtn = document.getElementById('switchExerciseBtn');
+
+        if (stopBtnOverlay) {
+            stopBtnOverlay.addEventListener('click', () => this.stopAnalysis());
+        }
+
+        if (pauseBtn) {
+            pauseBtn.addEventListener('click', () => this.togglePause());
+        }
+
+        if (switchExerciseBtn) {
+            switchExerciseBtn.addEventListener('click', () => this.switchExercise());
+        }
+    }
+
+    /**
+     * Toggle pause/resume
+     */
+    togglePause() {
+        const pauseBtn = document.getElementById('pauseBtn');
+        if (this.analyzer && this.analyzer.isRunning) {
+            if (this.isPaused) {
+                this.analyzer.resume?.();
+                if (pauseBtn) pauseBtn.textContent = '⏸️ Pause';
+                this.isPaused = false;
+                this.showStatus('Analysis resumed', 'info');
+            } else {
+                this.analyzer.pause?.();
+                if (pauseBtn) pauseBtn.textContent = '▶️ Resume';
+                this.isPaused = true;
+                this.showStatus('Analysis paused', 'warning');
+            }
+        }
+    }
+
+    /**
+     * Switch exercise type
+     */
+    switchExercise() {
+        const exerciseSelect = document.getElementById('exerciseSelect');
+        
+        if (exerciseSelect) {
+            // Toggle between pushup and handstand
+            const currentValue = exerciseSelect.value;
+            const newValue = currentValue === 'pushup' ? 'handstand' : 'pushup';
+            exerciseSelect.value = newValue;
+            
+            // Update the exercise badge
+            this.updateExerciseBadge();
+            
+            // Update the analyzer if it exists
+            if (this.analyzer) {
+                this.analyzer.setExerciseType(newValue);
+            }
+            
+            this.showStatus(`Switched to ${newValue}`, 'info');
         }
     }
 
@@ -315,29 +451,189 @@ class FitnessCoachApp {
         if (encouragement) {
             encouragement.classList.add('hidden');
         }
+
+        // Remove analysis overlay
+        this.removeAnalysisOverlay();
+    }
+
+    /**
+     * Show status message
+     */
+    showStatus(message, type = 'info') {
+        console.log(`📊 Status (${type}):`, message);
+        
+        // Create or update status element
+        let statusElement = document.getElementById('analysisStatus');
+        if (!statusElement) {
+            statusElement = document.createElement('div');
+            statusElement.id = 'analysisStatus';
+            statusElement.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-weight: bold;
+                z-index: 1000;
+                transition: all 0.3s ease;
+            `;
+            document.body.appendChild(statusElement);
+        }
+
+        // Set message and style based on type
+        statusElement.textContent = message;
+        statusElement.className = '';
+        
+        switch (type) {
+            case 'success':
+                statusElement.style.backgroundColor = '#10b981';
+                statusElement.style.color = 'white';
+                break;
+            case 'error':
+                statusElement.style.backgroundColor = '#ef4444';
+                statusElement.style.color = 'white';
+                break;
+            case 'warning':
+                statusElement.style.backgroundColor = '#f59e0b';
+                statusElement.style.color = 'white';
+                break;
+            default: // info
+                statusElement.style.backgroundColor = '#3b82f6';
+                statusElement.style.color = 'white';
+        }
+
+        // Auto-hide after 3 seconds for non-persistent messages
+        if (type !== 'success') {
+            setTimeout(() => {
+                if (statusElement && statusElement.parentNode) {
+                    statusElement.remove();
+                }
+            }, 3000);
+        }
+    }
+
+    /**
+     * Add analysis overlay to video
+     */
+    addAnalysisOverlay() {
+        const videoContainer = document.querySelector('.video-container');
+        if (!videoContainer) return;
+
+        // Remove existing overlay
+        this.removeAnalysisOverlay();
+
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'analysisOverlay';
+        overlay.style.cssText = `
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 20;
+            min-width: 200px;
+        `;
+
+        // Add initial content
+        overlay.innerHTML = `
+            <div style="margin-bottom: 5px;">🔍 <strong>Analysis Status</strong></div>
+            <div id="overlayCamera">📷 Camera: Initializing...</div>
+            <div id="overlayMediaPipe">🤖 MediaPipe: Loading...</div>
+            <div id="overlayPoseDetection">👤 Pose: Not detected</div>
+            <div id="overlayCoaching">🧠 Coaching: Waiting...</div>
+        `;
+
+        videoContainer.appendChild(overlay);
+        console.log('📊 Analysis overlay added');
+    }
+
+    /**
+     * Remove analysis overlay
+     */
+    removeAnalysisOverlay() {
+        const overlay = document.getElementById('analysisOverlay');
+        if (overlay) {
+            overlay.remove();
+            console.log('📊 Analysis overlay removed');
+        }
+    }
+
+    /**
+     * Update analysis overlay
+     */
+    updateAnalysisOverlay(data) {
+        const overlayCamera = document.getElementById('overlayCamera');
+        const overlayMediaPipe = document.getElementById('overlayMediaPipe');
+        const overlayPoseDetection = document.getElementById('overlayPoseDetection');
+        const overlayCoaching = document.getElementById('overlayCoaching');
+
+        if (overlayCamera && data.cameraStatus) {
+            overlayCamera.textContent = `📷 Camera: ${data.cameraStatus}`;
+        }
+
+        if (overlayMediaPipe && data.mediaPipeStatus) {
+            overlayMediaPipe.textContent = `🤖 MediaPipe: ${data.mediaPipeStatus}`;
+        }
+
+        if (overlayPoseDetection && data.poseDetected !== undefined) {
+            const status = data.poseDetected ? 'Detected ✅' : 'Searching...';
+            overlayPoseDetection.textContent = `👤 Pose: ${status}`;
+        }
+
+        if (overlayCoaching && data.coachingActive !== undefined) {
+            const status = data.coachingActive ? 'Active ✅' : 'Standby';
+            overlayCoaching.textContent = `🧠 Coaching: ${status}`;
+        }
     }
 }
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 DOM loaded, initializing AI Fitness Coach...');
+    
     // Check for MediaPipe support
+    console.log('🔍 Checking MediaPipe availability...');
     if (typeof Pose === 'undefined') {
-        console.error('MediaPipe Pose not found. Please check your internet connection.');
+        console.error('❌ MediaPipe Pose not found. Please check your internet connection.');
         document.getElementById('errorMessage').classList.remove('hidden');
         document.getElementById('errorText').textContent = 'MediaPipe not loaded. Please refresh the page.';
         return;
     }
+    console.log('✅ MediaPipe Pose is available');
 
     // Check for camera support
+    console.log('🔍 Checking camera support...');
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        console.error('Camera not supported in this browser.');
+        console.error('❌ Camera not supported in this browser.');
         document.getElementById('errorMessage').classList.remove('hidden');
         document.getElementById('errorText').textContent = 'Camera not supported. Please use a modern browser.';
         return;
     }
+    console.log('✅ Camera API is available');
+
+    // Check for MediaPipe utilities
+    console.log('🔍 Checking MediaPipe utilities...');
+    if (typeof Camera === 'undefined') {
+        console.warn('⚠️ MediaPipe Camera utility not loaded');
+    } else {
+        console.log('✅ MediaPipe Camera utility is available');
+    }
+
+    if (typeof drawConnectors === 'undefined' || typeof drawLandmarks === 'undefined') {
+        console.warn('⚠️ MediaPipe drawing utilities not loaded');
+    } else {
+        console.log('✅ MediaPipe drawing utilities are available');
+    }
 
     // Initialize the app
+    console.log('🎯 Initializing FitnessCoachApp...');
     window.fitnessApp = new FitnessCoachApp();
+    console.log('✅ FitnessCoachApp initialized successfully');
 });
 
 // Add global error handlers

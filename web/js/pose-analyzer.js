@@ -13,6 +13,7 @@ export class PoseAnalyzer {
         this.coach = new PoseCoach();
         this.isRunning = false;
         this.exerciseType = 'pushup';
+        this.lastPoseDetected = false;
         
         // Performance tracking
         this.frameTimes = [];
@@ -46,12 +47,21 @@ export class PoseAnalyzer {
      */
     async initializePose() {
         try {
+            console.log('🤖 Initializing MediaPipe Pose...');
+            
+            // Check if Pose is available
+            if (typeof Pose === 'undefined') {
+                throw new Error('MediaPipe Pose not loaded. Check CDN connection.');
+            }
+
             this.pose = new Pose({
                 locateFile: (file) => {
+                    console.log(`📁 Loading MediaPipe file: ${file}`);
                     return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
                 }
             });
 
+            console.log('⚙️ Setting MediaPipe options...');
             this.pose.setOptions({
                 modelComplexity: 1,
                 smoothLandmarks: true,
@@ -63,10 +73,10 @@ export class PoseAnalyzer {
 
             this.pose.onResults(this.onResults.bind(this));
             
-            console.log('MediaPipe Pose initialized successfully');
+            console.log('✅ MediaPipe Pose initialized successfully');
             return true;
         } catch (error) {
-            console.error('Failed to initialize MediaPipe Pose:', error);
+            console.error('❌ Failed to initialize MediaPipe Pose:', error);
             return false;
         }
     }
@@ -76,14 +86,23 @@ export class PoseAnalyzer {
      */
     async start(cameraDeviceId = null) {
         try {
+            console.log('🎥 Starting camera and pose analysis...');
+            
             // Initialize pose if not already done
             if (!this.pose) {
+                console.log('🤖 Pose not initialized, initializing now...');
                 const success = await this.initializePose();
                 if (!success) {
                     throw new Error('Failed to initialize pose detection');
                 }
             }
 
+            // Update analysis overlay
+            window.fitnessApp?.updateAnalysisOverlay({
+                mediaPipeStatus: 'Ready ✅'
+            });
+
+            console.log('📷 Requesting camera access...');
             // Get camera access
             const constraints = {
                 video: {
@@ -95,11 +114,27 @@ export class PoseAnalyzer {
 
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             this.videoElement.srcObject = stream;
+            console.log('✅ Camera stream acquired');
 
+            // Update analysis overlay
+            window.fitnessApp?.updateAnalysisOverlay({
+                cameraStatus: 'Connected ✅'
+            });
+
+            // Check if Camera utility is available
+            if (typeof Camera === 'undefined') {
+                throw new Error('MediaPipe Camera utility not loaded. Check CDN connection.');
+            }
+
+            console.log('🎬 Initializing MediaPipe Camera...');
             // Initialize camera
             this.camera = new Camera(this.videoElement, {
                 onFrame: async () => {
                     if (this.isRunning) {
+                        // Log every 30th frame to avoid spam
+                        if (this.totalFrames % 30 === 0) {
+                            console.log('🔄 Processing frame...', this.totalFrames);
+                        }
                         await this.pose.send({ image: this.videoElement });
                     }
                 },
@@ -108,16 +143,24 @@ export class PoseAnalyzer {
             });
 
             await this.camera.start();
+            console.log('✅ MediaPipe Camera started');
             
             this.isRunning = true;
             this.sessionStartTime = Date.now();
             this.coach.reset();
             
-            console.log('Camera and pose analysis started');
+            console.log('🚀 Camera and pose analysis fully started');
             return true;
         } catch (error) {
-            console.error('Failed to start camera:', error);
+            console.error('❌ Failed to start camera:', error);
             this.showError('Failed to access camera. Please check permissions.');
+            
+            // Update analysis overlay with error
+            window.fitnessApp?.updateAnalysisOverlay({
+                cameraStatus: 'Failed ❌',
+                mediaPipeStatus: 'Error ❌'
+            });
+            
             return false;
         }
     }
@@ -156,20 +199,52 @@ export class PoseAnalyzer {
         
         // Track frame statistics
         this.totalFrames++;
-        if (results.poseLandmarks) {
-            this.detectedFrames++;
+        const poseDetected = !!results.poseLandmarks;
+        
+        // Log every 60th frame or when pose status changes
+        const logFrame = this.totalFrames % 60 === 0 || 
+                        (poseDetected !== this.lastPoseDetected);
+        
+        if (logFrame) {
+            console.log('📊 Processing pose results... Frame:', this.totalFrames);
         }
+        
+        if (poseDetected) {
+            this.detectedFrames++;
+            if (logFrame) {
+                console.log('👤 Pose detected! Landmarks:', results.poseLandmarks.length);
+            }
+        } else if (logFrame) {
+            console.log('👤 No pose detected in this frame');
+        }
+        
+        this.lastPoseDetected = poseDetected;
+
+        // Update analysis overlay
+        window.fitnessApp?.updateAnalysisOverlay({
+            poseDetected: poseDetected,
+            coachingActive: poseDetected
+        });
 
         // Clear canvas and draw results
         if (this.canvasContext) {
             this.canvasContext.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
             
             if (results.poseLandmarks) {
+                if (logFrame) {
+                    console.log('🎨 Drawing pose landmarks...');
+                }
                 // Draw pose landmarks
                 this.drawPose(results);
                 
+                if (logFrame) {
+                    console.log('🧠 Getting coaching feedback...');
+                }
                 // Get coaching feedback
                 const feedback = this.coach.analyzeAndCoach(results.poseLandmarks, this.exerciseType);
+                if (logFrame) {
+                    console.log('💬 Coaching feedback:', feedback.primaryFeedback);
+                }
                 
                 // Update UI with feedback
                 this.updateFeedbackUI(feedback);
@@ -186,6 +261,9 @@ export class PoseAnalyzer {
         }
         
         this.updateStatsUI();
+        if (logFrame) {
+            console.log(`⚡ Frame processed in ${frameTime.toFixed(2)}ms`);
+        }
     }
 
     /**
