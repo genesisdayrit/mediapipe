@@ -7,10 +7,10 @@ import { drawLandmarksAndAngles, calculateFPS, formatTime } from './utils.js';
 import { PoseCoach } from './pose-coach.js';
 
 export class PoseAnalyzer {
-    constructor() {
+    constructor(speakCallback = null) {
         this.pose = null;
         this.camera = null;
-        this.coach = new PoseCoach();
+        this.coach = new PoseCoach(speakCallback);
         this.isRunning = false;
         this.exerciseType = 'pushup';
         this.lastPoseDetected = false;

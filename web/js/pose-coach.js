@@ -1,17 +1,157 @@
 /**
  * AI Pose Coach - JavaScript equivalent of Python pose_coach.py
- * Provides intelligent coaching feedback for exercise form
+ * Provides intelligent coaching feedback for exercise form with ElevenLabs voice integration
  */
 
 import { verifyPosture, getLandmarkCoordinates } from './utils.js';
 
 export class PoseCoach {
-    constructor() {
+    constructor(speakCallback = null) {
         this.frameHistory = [];
         this.maxHistoryFrames = 10;
         this.consistencyThreshold = 0.7;
         this.lastFeedbackTime = 0;
         this.feedbackCooldown = 1000; // 1 second
+        
+        // --- Voice Coaching System ---
+        this.speakCallback = speakCallback;
+        this.lastSpokenFeedback = { type: '', time: 0 };
+        this.speechCooldown = 4000; // 4 seconds between spoken feedback
+        this.recentFeedbackTypes = []; // Track recent feedback to avoid repetition
+        this.maxRecentFeedback = 3;
+        
+        // Voice feedback variations - inspired by Python script
+        this.feedbackVariations = {
+            // Pushup - Rep completion and form
+            'pushup_rep_completed': [
+                "Perfect form! That's {reps} reps!",
+                "Excellent! {reps} down, keep it up!",
+                "Outstanding form! {reps} reps completed!",
+                "Beautiful push-up! That's {reps}!",
+                "Fantastic! {reps} perfect reps!"
+            ],
+            'pushup_good_form': [
+                "Perfect form! Keep it up!",
+                "Excellent technique!",
+                "That's how it's done!",
+                "Beautiful form!",
+                "Outstanding control!",
+                "Perfect push-up form!"
+            ],
+            'pushup_good_depth': [
+                "Good depth! Now push up strong!",
+                "Perfect depth! Drive up with power!",
+                "Excellent range! Now explode up!",
+                "Great depth! Push through those arms!",
+                "Nice low position! Now drive up!"
+            ],
+            'pushup_need_depth': [
+                "Go deeper! Get that chest closer to the ground!",
+                "Lower down more! Full range of motion!",
+                "Deeper! Touch that chest to the floor!",
+                "More depth! Get lower on the way down!",
+                "Go all the way down! Full push-up!"
+            ],
+            'pushup_need_extension': [
+                "Lock out those arms! Full extension!",
+                "Push all the way up! Straighten those arms!",
+                "Complete the rep! Arms fully extended!",
+                "All the way up! Lock those elbows!",
+                "Full extension! Push to the top!"
+            ],
+            'pushup_body_alignment': [
+                "Keep your body straight! Engage that core!",
+                "Straight line from head to heels!",
+                "Tighten that core! Hold the plank position!",
+                "Body alignment! Keep it straight!",
+                "Engage your core! Perfect plank form!"
+            ],
+            
+            // Handstand feedback
+            'handstand_entry': [
+                "Awesome! You're in a handstand!",
+                "Incredible! Perfect handstand entry!",
+                "Amazing balance! You're inverted!",
+                "Outstanding! Handstand achieved!",
+                "Fantastic! You nailed the handstand!"
+            ],
+            'handstand_exit': [
+                "Nice work! Try to hold it longer next time!",
+                "Great effort! Build up that hold time!",
+                "Good attempt! Work on extending the hold!",
+                "Well done! Keep practicing those holds!",
+                "Nice try! Aim for a longer handstand next time!"
+            ],
+            'handstand_perfect_form': [
+                "Perfect line! Hold steady!",
+                "Outstanding alignment! Stay strong!",
+                "Beautiful handstand! Maintain it!",
+                "Incredible form! Keep it up!",
+                "Perfect balance! Hold that position!"
+            ],
+            'handstand_body_alignment': [
+                "Keep that body straight! Engage your core!",
+                "Straighten that line! Core tight!",
+                "Body alignment! Pull everything in line!",
+                "Engage that core! Straight body position!",
+                "Tighten up! Keep that perfect line!"
+            ],
+            'handstand_arm_extension': [
+                "Lock those elbows! Full arm extension!",
+                "Straighten those arms! Push the ground away!",
+                "Extend your arms fully for better stability!",
+                "Lock out those arms! Strong foundation!",
+                "Full arm extension! Push through your hands!"
+            ],
+            
+            // General encouragement
+            'general_encouragement': [
+                "You're doing great! Keep pushing!",
+                "Excellent work! Don't give up!",
+                "Amazing effort! Stay focused!",
+                "You've got this! Keep going!",
+                "Outstanding! Push through!",
+                "Incredible dedication! Keep it up!"
+            ],
+            
+            // Milestone celebrations
+            'milestone_5_reps': [
+                "Five reps! You're on fire!",
+                "That's five! Amazing work!",
+                "Five perfect reps! Keep the momentum!",
+                "Five down! You're crushing it!",
+                "Five reps complete! Unstoppable!"
+            ],
+            'milestone_10_reps': [
+                "Ten reps! You're a machine!",
+                "Double digits! Incredible strength!",
+                "Ten perfect reps! Outstanding!",
+                "That's ten! You're dominating!",
+                "Ten reps! Absolutely crushing it!"
+            ],
+            'milestone_15_reps': [
+                "Fifteen reps! Unbelievable!",
+                "Fifteen! You're in beast mode!",
+                "Fifteen perfect reps! Legendary!",
+                "That's fifteen! Absolutely amazing!",
+                "Fifteen reps! You're unstoppable!"
+            ],
+            
+            // Welcome and mode switches
+            'welcome_start': [
+                "Voice coach ready! Show me your exercise form!",
+                "Let's get started! Time to work on that form!",
+                "Ready to coach! Let's see what you've got!",
+                "Voice coach activated! Bring your best effort!",
+                "I'm here to help! Let's perfect that technique!"
+            ]
+        };
+        
+        // Exercise state tracking for rep counting
+        this.exerciseState = {
+            pushup: { position: 'up', repCount: 0, lastRepTime: 0 },
+            handstand: { isInHandstand: false, entryTime: 0, repCount: 0 }
+        };
     }
 
     /**
@@ -78,7 +218,7 @@ export class PoseCoach {
     }
 
     /**
-     * Analyze pushup form
+     * Analyze pushup form with voice coaching
      * @param {Array} landmarks - MediaPipe pose landmarks
      * @param {Object} angles - Calculated angles
      * @returns {Object} Pushup feedback
@@ -93,16 +233,48 @@ export class PoseCoach {
 
         const leftElbow = angles.elbow_angle_left;
         const rightElbow = angles.elbow_angle_right;
+        const avgElbow = (leftElbow + rightElbow) / 2;
+        
+        // Track rep progression for voice feedback
+        const now = Date.now();
+        const currentState = this.exerciseState.pushup;
+        
+        // Rep counting and voice feedback
+        if (avgElbow > 160 && currentState.position === 'down') {
+            // Moving to up position - rep completed
+            currentState.position = 'up';
+            currentState.repCount++;
+            currentState.lastRepTime = now;
+            
+            // Voice feedback for rep milestones
+            if (currentState.repCount === 5) {
+                this.speak('milestone_5_reps', {}, true);
+            } else if (currentState.repCount === 10) {
+                this.speak('milestone_10_reps', {}, true);
+            } else if (currentState.repCount === 15) {
+                this.speak('milestone_15_reps', {}, true);
+            } else if (currentState.repCount % 5 === 0 && currentState.repCount > 15) {
+                this.speak('pushup_rep_completed', { reps: currentState.repCount }, true);
+            } else {
+                this.speak('pushup_good_form');
+            }
+        } else if (avgElbow < 90 && currentState.position === 'up') {
+            // Moving to down position
+            currentState.position = 'down';
+            this.speak('pushup_good_depth');
+        }
         
         // Critical issues first
         if (leftElbow < 70 || rightElbow < 70) {
             feedback.primaryFeedback = "⚠️ Arms too bent - push higher!";
             feedback.tips.push("Extend your arms more to complete the push-up");
             feedback.priority = "critical";
+            this.speak('pushup_need_extension');
         } else if (leftElbow > 150 || rightElbow > 150) {
             feedback.primaryFeedback = "⚠️ Lower down more for full range";
             feedback.tips.push("Bend your elbows to 90-110 degrees for proper form");
             feedback.priority = "critical";
+            this.speak('pushup_need_depth');
         } else {
             // Check for form issues
             const bodyAlignment = this.checkPushupBodyAlignment(landmarks);
@@ -111,6 +283,7 @@ export class PoseCoach {
                 feedback.primaryFeedback = "📐 Keep your body straight";
                 feedback.tips.push("Engage your core to maintain a plank position");
                 feedback.priority = "major";
+                this.speak('pushup_body_alignment');
             } else if (Math.abs(leftElbow - rightElbow) > 15) {
                 feedback.primaryFeedback = "⚖️ Balance both arms equally";
                 feedback.tips.push("Lower both arms at the same rate");
@@ -121,6 +294,11 @@ export class PoseCoach {
                 feedback.tips.push("Keep up this great technique");
                 feedback.priority = "success";
                 feedback.motivational = this.getMotivationalMessage("good");
+                
+                // Only speak good form occasionally to avoid spam
+                if (now - currentState.lastRepTime > 3000) {
+                    this.speak('pushup_good_form');
+                }
             }
         }
 
@@ -141,7 +319,7 @@ export class PoseCoach {
     }
 
     /**
-     * Analyze handstand form
+     * Analyze handstand form with voice coaching
      * @param {Array} landmarks - MediaPipe pose landmarks
      * @param {Object} angles - Calculated angles
      * @returns {Object} Handstand feedback
@@ -158,16 +336,37 @@ export class PoseCoach {
         const rightAlignment = angles.shoulder_hip_ankle_angle_right;
         const leftElbow = angles.elbow_angle_left;
         const rightElbow = angles.elbow_angle_right;
+        
+        // Check if person is inverted (basic handstand detection)
+        const isInverted = this.checkHandstandInversion(landmarks);
+        const now = Date.now();
+        const currentState = this.exerciseState.handstand;
+        
+        // Handstand entry/exit detection with voice feedback
+        if (isInverted && !currentState.isInHandstand) {
+            // Just entered handstand
+            currentState.isInHandstand = true;
+            currentState.entryTime = now;
+            currentState.repCount++;
+            this.speak('handstand_entry', {}, true);
+        } else if (!isInverted && currentState.isInHandstand) {
+            // Just exited handstand
+            currentState.isInHandstand = false;
+            const holdTime = (now - currentState.entryTime) / 1000;
+            this.speak('handstand_exit', { holdTime: holdTime.toFixed(1) }, true);
+        }
 
         // Critical issues first
         if (leftElbow < 160 || rightElbow < 160) {
             feedback.primaryFeedback = "💪 Extend your arms fully";
             feedback.tips.push("Lock your elbows for better stability");
             feedback.priority = "critical";
+            this.speak('handstand_arm_extension');
         } else if (leftAlignment < 160 || rightAlignment < 160) {
             feedback.primaryFeedback = "📏 Straighten your body line";
             feedback.tips.push("Engage your core and point your toes up");
             feedback.priority = "critical";
+            this.speak('handstand_body_alignment');
         } else {
             // Check for balance and form
             const balance = this.checkHandstandBalance(landmarks);
@@ -180,12 +379,18 @@ export class PoseCoach {
                 feedback.primaryFeedback = "📐 Keep both sides aligned";
                 feedback.tips.push("Engage your core evenly on both sides");
                 feedback.priority = "major";
+                this.speak('handstand_body_alignment');
             } else {
                 // Excellent handstand!
                 feedback.primaryFeedback = "🌟 Amazing handstand form!";
                 feedback.tips.push("Hold this position as long as you can");
                 feedback.priority = "success";
                 feedback.motivational = this.getMotivationalMessage("excellent");
+                
+                // Only speak perfect form occasionally during holds
+                if (currentState.isInHandstand && (now - currentState.entryTime) > 2000) {
+                    this.speak('handstand_perfect_form');
+                }
             }
         }
 
@@ -291,6 +496,27 @@ export class PoseCoach {
             return { stable };
         } catch (error) {
             return { stable: true };
+        }
+    }
+
+    /**
+     * Check if person is in handstand (inverted) position
+     * @param {Array} landmarks - MediaPipe pose landmarks
+     * @returns {boolean} Whether person is inverted
+     */
+    checkHandstandInversion(landmarks) {
+        try {
+            const leftShoulder = getLandmarkCoordinates(landmarks, 11);
+            const leftWrist = getLandmarkCoordinates(landmarks, 15);
+            const leftHip = getLandmarkCoordinates(landmarks, 23);
+            
+            // Check if wrists are above shoulders and shoulders are above hips (inverted)
+            const wristsAboveShoulders = leftWrist.y < leftShoulder.y;
+            const shouldersAboveHips = leftShoulder.y < leftHip.y;
+            
+            return wristsAboveShoulders && shouldersAboveHips;
+        } catch (error) {
+            return false;
         }
     }
 
@@ -420,6 +646,18 @@ export class PoseCoach {
     reset() {
         this.frameHistory = [];
         this.lastFeedbackTime = 0;
+        
+        // Reset voice coaching state
+        this.lastSpokenFeedback = { type: '', time: 0 };
+        this.recentFeedbackTypes = [];
+        
+        // Reset exercise state tracking
+        this.exerciseState = {
+            pushup: { position: 'up', repCount: 0, lastRepTime: 0 },
+            handstand: { isInHandstand: false, entryTime: 0, repCount: 0 }
+        };
+        
+        console.log('🔄 PoseCoach reset - ready for new session');
     }
 
     /**
@@ -448,5 +686,73 @@ export class PoseCoach {
         };
 
         return tips[exerciseType] || [];
+    }
+
+    /**
+     * Get a random variation of feedback message
+     * @param {string} feedbackType - Type of feedback
+     * @param {Object} context - Context for message formatting (e.g., reps)
+     * @returns {string} Formatted feedback message
+     */
+    getFeedback(feedbackType, context = {}) {
+        if (!this.feedbackVariations[feedbackType]) {
+            console.warn(`Feedback type "${feedbackType}" not found in variations`);
+            return `Keep going! ${feedbackType}`;
+        }
+        
+        const variations = this.feedbackVariations[feedbackType];
+        const selected = variations[Math.floor(Math.random() * variations.length)];
+        
+        // Format with context (e.g., rep count)
+        try {
+            return selected.replace(/\{(\w+)\}/g, (match, key) => {
+                return context[key] !== undefined ? context[key] : match;
+            });
+        } catch (error) {
+            console.warn('Error formatting feedback message:', error);
+            return selected;
+        }
+    }
+
+    /**
+     * Speak feedback with cooldown and anti-repetition logic
+     * @param {string} feedbackType - Type of feedback to speak
+     * @param {Object} context - Context for message formatting
+     * @param {boolean} priority - Whether to bypass cooldown for important messages
+     */
+    speak(feedbackType, context = {}, priority = false) {
+        // Check if speech callback is available
+        if (!this.speakCallback || typeof this.speakCallback !== 'function') {
+            return;
+        }
+        
+        const now = Date.now();
+        const timeSinceLastSpoken = now - this.lastSpokenFeedback.time;
+        
+        // Cooldown check - bypass for priority messages
+        if (!priority && timeSinceLastSpoken < this.speechCooldown) {
+            return;
+        }
+        
+        // Anti-repetition check - don't repeat recent feedback types
+        if (!priority && this.recentFeedbackTypes.includes(feedbackType)) {
+            return;
+        }
+        
+        // Generate and speak the message
+        const message = this.getFeedback(feedbackType, context);
+        if (message) {
+            console.log(`🔊 Speaking: ${message}`);
+            this.speakCallback(message);
+            
+            // Update tracking
+            this.lastSpokenFeedback = { type: feedbackType, time: now };
+            this.recentFeedbackTypes.push(feedbackType);
+            
+            // Limit recent feedback history
+            if (this.recentFeedbackTypes.length > this.maxRecentFeedback) {
+                this.recentFeedbackTypes.shift();
+            }
+        }
     }
 } 

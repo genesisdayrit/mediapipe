@@ -13,8 +13,140 @@ class FitnessCoachApp {
         this.isRunning = false;
         this.isPaused = false;
         this.currentExercise = 'pushup';
+        this.voiceEnabled = true; // Voice coaching enabled by default
+        
+        // ElevenLabs configuration - loaded from config.js
+        this.elevenLabsConfig = {
+            apiKey: window.CONFIG?.ELEVENLABS_API_KEY || '',
+            voiceId: window.CONFIG?.ELEVENLABS_VOICE_ID || 'nPczCjzI2devNBz1zQrb',
+            apiUrl: window.CONFIG?.ELEVENLABS_API_URL || 'https://api.elevenlabs.io/v1/text-to-speech'
+        };
+        
+        // Validate configuration
+        this.validateConfiguration();
+        
+        // Log ElevenLabs configuration status
+        this.logElevenLabsStatus();
         
         this.initializeApp();
+    }
+
+    /**
+     * Validate configuration is properly loaded
+     */
+    validateConfiguration() {
+        if (!window.CONFIG) {
+            console.error('❌ Configuration Error: config.js not loaded!');
+            console.log('💡 Please ensure config.js is included before app.js in your HTML');
+            console.log('💡 Copy config.example.js to config.js and add your API key');
+            this.showError('Configuration file not found. Please check setup instructions.');
+            return false;
+        }
+        
+        if (!window.CONFIG.ELEVENLABS_API_KEY) {
+            console.error('❌ Configuration Error: ElevenLabs API key not set!');
+            console.log('💡 Please add your ElevenLabs API key to config.js');
+            this.showError('ElevenLabs API key not configured. Please check config.js');
+            return false;
+        }
+        
+        console.log('✅ Configuration loaded successfully');
+        return true;
+    }
+
+    /**
+     * Log ElevenLabs configuration status for debugging
+     */
+    logElevenLabsStatus() {
+        console.log('🔧 ElevenLabs Configuration Status:');
+        
+        if (!this.elevenLabsConfig.apiKey || this.elevenLabsConfig.apiKey.trim() === '') {
+            console.error('❌ ElevenLabs API Key: NOT CONFIGURED');
+            console.log('⚠️  Please add your API key to web/js/config.js');
+        } else {
+            const apiKeyPreview = `${this.elevenLabsConfig.apiKey.substring(0, 4)}...${this.elevenLabsConfig.apiKey.substring(this.elevenLabsConfig.apiKey.length - 4)}`;
+            console.log('✅ ElevenLabs API Key:', apiKeyPreview);
+        }
+        
+        console.log('🎙️  Voice ID:', this.elevenLabsConfig.voiceId);
+        console.log('🌐 API Endpoint:', this.elevenLabsConfig.apiUrl);
+        console.log('---');
+    }
+
+    /**
+     * Test ElevenLabs API authentication
+     */
+    async testElevenLabsAuthentication() {
+        console.log('🔐 Testing ElevenLabs API authentication...');
+        
+        try {
+            // Check if API key is configured
+            if (!this.elevenLabsConfig.apiKey || 
+                this.elevenLabsConfig.apiKey === 'YOUR_NEW_ELEVENLABS_API_KEY_HERE' ||
+                this.elevenLabsConfig.apiKey.trim() === '') {
+                console.error('❌ Cannot test authentication: API key not configured');
+                return false;
+            }
+
+            // Test authentication by fetching available voices
+            const response = await fetch('https://api.elevenlabs.io/v1/voices', {
+                method: 'GET',
+                headers: {
+                    'xi-api-key': this.elevenLabsConfig.apiKey,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            console.log('📡 API Response Status:', response.status, response.statusText);
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ ElevenLabs Authentication: SUCCESS');
+                console.log('🎭 Available voices count:', data.voices ? data.voices.length : 'Unknown');
+                
+                // Check if our selected voice ID exists
+                if (data.voices) {
+                    const selectedVoice = data.voices.find(voice => voice.voice_id === this.elevenLabsConfig.voiceId);
+                    if (selectedVoice) {
+                        console.log('✅ Selected voice found:', selectedVoice.name);
+                        console.log('🎯 Voice details:', {
+                            name: selectedVoice.name,
+                            description: selectedVoice.description,
+                            category: selectedVoice.category
+                        });
+                    } else {
+                        console.warn('⚠️  Selected voice ID not found in available voices');
+                        console.log('Available voice IDs:', data.voices.map(v => v.voice_id).slice(0, 5));
+                    }
+                }
+                
+                return true;
+            } else {
+                const errorText = await response.text();
+                console.error('❌ ElevenLabs Authentication: FAILED');
+                console.error('📄 Error details:', errorText);
+                
+                if (response.status === 401) {
+                    console.error('🔑 Error: Invalid API key - please check your ElevenLabs API key');
+                } else if (response.status === 403) {
+                    console.error('🚫 Error: Access forbidden - check your account permissions');
+                } else if (response.status === 429) {
+                    console.error('⏰ Error: Rate limit exceeded - try again later');
+                } else {
+                    console.error('🔧 Error: API call failed with status', response.status);
+                }
+                
+                return false;
+            }
+        } catch (error) {
+            console.error('❌ ElevenLabs Authentication Test: NETWORK ERROR');
+            console.error('🌐 Error details:', error.message);
+            console.log('💡 This could be due to:');
+            console.log('   - Network connectivity issues');
+            console.log('   - CORS restrictions');
+            console.log('   - API endpoint unavailable');
+            return false;
+        }
     }
 
     /**
@@ -35,6 +167,9 @@ class FitnessCoachApp {
             
             // Update exercise tips
             this.updateExerciseTips();
+            
+            // Test ElevenLabs authentication
+            await this.testElevenLabsAuthentication();
             
             console.log('✅ Application initialized successfully');
             
@@ -85,6 +220,18 @@ class FitnessCoachApp {
             });
         }
 
+        // Voice toggle button
+        const voiceToggleBtn = document.getElementById('voiceToggleBtn');
+        if (voiceToggleBtn) {
+            // Set initial state
+            voiceToggleBtn.innerHTML = this.voiceEnabled ? '<i class="fas fa-volume-up"></i> Voice ON' : '<i class="fas fa-volume-mute"></i> Voice OFF';
+            voiceToggleBtn.classList.add(this.voiceEnabled ? 'voice-enabled' : 'voice-disabled');
+            
+            voiceToggleBtn.addEventListener('click', () => {
+                this.toggleVoice();
+            });
+        }
+
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
@@ -98,8 +245,16 @@ class FitnessCoachApp {
                 if (this.isRunning) {
                     this.stopAnalysis();
                 }
+            } else if (e.code === 'KeyV') {
+                e.preventDefault();
+                this.toggleVoice();
             }
         });
+        
+        console.log('⌨️ Keyboard shortcuts:');
+        console.log('   - SPACE: Start/Stop analysis');
+        console.log('   - V: Toggle voice coaching');
+        console.log('   - ESC: Stop analysis');
     }
 
     /**
@@ -172,7 +327,18 @@ class FitnessCoachApp {
             // Initialize analyzer if not created
             if (!this.analyzer) {
                 console.log('🚀 Creating pose analyzer...');
-                this.analyzer = new PoseAnalyzer();
+                // Create speech callback bound to this instance
+                const speechCallback = (text) => {
+                    if (!this.voiceEnabled) {
+                        console.log('🔇 Voice disabled - skipping:', text);
+                        return;
+                    }
+                    console.log('🎤 Speech callback received:', text);
+                    this.generateSpeech(text).catch(error => {
+                        console.warn('Speech generation failed:', error);
+                    });
+                };
+                this.analyzer = new PoseAnalyzer(speechCallback);
             }
 
             // Start the analyzer
@@ -210,6 +376,10 @@ class FitnessCoachApp {
         
         if (this.analyzer) {
             this.analyzer.stop();
+            // Reset coach state for fresh start next time
+            if (this.analyzer.coach) {
+                this.analyzer.coach.reset();
+            }
         }
         this.isRunning = false;
         this.isPaused = false;
@@ -387,6 +557,36 @@ class FitnessCoachApp {
     }
 
     /**
+     * Toggle voice coaching on/off
+     */
+    toggleVoice() {
+        this.voiceEnabled = !this.voiceEnabled;
+        
+        // Update UI button text/icon
+        const voiceToggleBtn = document.getElementById('voiceToggleBtn');
+        if (voiceToggleBtn) {
+            if (this.voiceEnabled) {
+                voiceToggleBtn.innerHTML = '<i class="fas fa-volume-up"></i> Voice ON';
+                voiceToggleBtn.classList.remove('voice-disabled');
+                voiceToggleBtn.classList.add('voice-enabled');
+            } else {
+                voiceToggleBtn.innerHTML = '<i class="fas fa-volume-mute"></i> Voice OFF';
+                voiceToggleBtn.classList.remove('voice-enabled');
+                voiceToggleBtn.classList.add('voice-disabled');
+            }
+        }
+        
+        // Update overlay indicator if exists
+        const voiceStatusOverlay = document.getElementById('voiceStatusOverlay');
+        if (voiceStatusOverlay) {
+            voiceStatusOverlay.textContent = `🔊 Voice: ${this.voiceEnabled ? 'ON' : 'OFF'}`;
+        }
+        
+        console.log(`🔊 Voice coaching: ${this.voiceEnabled ? 'ENABLED' : 'DISABLED'}`);
+        this.showStatus(`Voice coaching ${this.voiceEnabled ? 'enabled' : 'disabled'}`, 'info');
+    }
+
+    /**
      * Hide loading message
      */
     hideLoading() {
@@ -561,6 +761,7 @@ class FitnessCoachApp {
             <div id="overlayMediaPipe">🤖 MediaPipe: Loading...</div>
             <div id="overlayPoseDetection">👤 Pose: Not detected</div>
             <div id="overlayCoaching">🧠 Coaching: Waiting...</div>
+            <div id="voiceStatusOverlay">🔊 Voice: ${this.voiceEnabled ? 'ON' : 'OFF'}</div>
         `;
 
         videoContainer.appendChild(overlay);
@@ -603,6 +804,66 @@ class FitnessCoachApp {
         if (overlayCoaching && data.coachingActive !== undefined) {
             const status = data.coachingActive ? 'Active ✅' : 'Standby';
             overlayCoaching.textContent = `🧠 Coaching: ${status}`;
+        }
+    }
+
+    /**
+     * Generate speech using ElevenLabs API
+     */
+    async generateSpeech(text) {
+        try {
+            console.log('🔊 Generating speech with ElevenLabs:', text);
+            
+            // Log API key info for debugging (safely showing only first/last 4 characters)
+            const apiKeyPreview = this.elevenLabsConfig.apiKey 
+                ? `${this.elevenLabsConfig.apiKey.substring(0, 4)}...${this.elevenLabsConfig.apiKey.substring(this.elevenLabsConfig.apiKey.length - 4)}`
+                : 'NOT SET';
+            console.log('🔑 Using ElevenLabs API Key:', apiKeyPreview);
+            console.log('🎙️ Voice ID:', this.elevenLabsConfig.voiceId);
+            console.log('🌐 API URL:', `${this.elevenLabsConfig.apiUrl}/${this.elevenLabsConfig.voiceId}`);
+            
+            if (!this.elevenLabsConfig.apiKey || this.elevenLabsConfig.apiKey.trim() === '') {
+                throw new Error('ElevenLabs API key not configured');
+            }
+            
+            const response = await fetch(`${this.elevenLabsConfig.apiUrl}/${this.elevenLabsConfig.voiceId}`, {
+                method: 'POST',
+                headers: {
+                    'xi-api-key': this.elevenLabsConfig.apiKey,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    text: text,
+                    model_id: 'eleven_multilingual_v2',
+                    output_format: 'mp3_44100_128'
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`ElevenLabs API error: ${response.status} ${response.statusText}`);
+            }
+
+            // Get audio data as blob
+            const audioBlob = await response.blob();
+            
+            // Create audio URL and play
+            const audioUrl = URL.createObjectURL(audioBlob);
+            const audio = new Audio(audioUrl);
+            
+            // Play the audio
+            await audio.play();
+            
+            console.log('✅ Speech generated and played successfully');
+            
+            // Clean up the URL after playing
+            audio.addEventListener('ended', () => {
+                URL.revokeObjectURL(audioUrl);
+            });
+            
+            return true;
+        } catch (error) {
+            console.error('❌ Error generating speech:', error);
+            return false;
         }
     }
 }
@@ -649,6 +910,66 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('🎯 Initializing FitnessCoachApp...');
     window.fitnessApp = new FitnessCoachApp();
     console.log('✅ FitnessCoachApp initialized successfully');
+    
+    // Add helper functions to window for easy console testing
+    window.testElevenLabs = () => {
+        console.log('🧪 Manual ElevenLabs API test requested...');
+        return window.fitnessApp.testElevenLabsAuthentication();
+    };
+    
+    window.testVoice = (text = 'Testing ElevenLabs voice integration!') => {
+        console.log('🎙️ Manual voice test requested...');
+        return window.fitnessApp.generateSpeech(text);
+    };
+    
+    window.testCoaching = (feedbackType = 'pushup_good_form') => {
+        console.log('🎯 Testing voice coaching system...');
+        if (window.fitnessApp.analyzer && window.fitnessApp.analyzer.coach) {
+            window.fitnessApp.analyzer.coach.speak(feedbackType, {}, true);
+            console.log(`🔊 Triggered coaching feedback: ${feedbackType}`);
+        } else {
+            console.log('⚠️ Analyzer not running - start analysis first');
+        }
+    };
+    
+    window.getCoachingStats = () => {
+        if (window.fitnessApp.analyzer && window.fitnessApp.analyzer.coach) {
+            const coach = window.fitnessApp.analyzer.coach;
+            return {
+                pushupReps: coach.exerciseState.pushup.repCount,
+                handstandReps: coach.exerciseState.handstand.repCount,
+                lastFeedback: coach.lastSpokenFeedback,
+                recentFeedback: coach.recentFeedbackTypes,
+                voiceEnabled: window.fitnessApp.voiceEnabled
+            };
+        }
+        return 'Analyzer not running';
+    };
+    
+    window.toggleVoice = () => {
+        console.log('🔊 Manual voice toggle requested...');
+        window.fitnessApp.toggleVoice();
+    };
+    
+    window.updateApiKey = (newKey) => {
+        console.log('🔑 Updating ElevenLabs API key...');
+        if (window.CONFIG) {
+            window.CONFIG.ELEVENLABS_API_KEY = newKey;
+            window.fitnessApp.elevenLabsConfig.apiKey = newKey;
+            console.log('✅ API key updated successfully');
+            window.fitnessApp.logElevenLabsStatus();
+        } else {
+            console.error('❌ CONFIG not found');
+        }
+    };
+    
+    console.log('🛠️ Helper functions available:');
+    console.log('   - testElevenLabs() - Test API authentication');
+    console.log('   - testVoice("your text") - Test voice generation');
+    console.log('   - testCoaching("feedback_type") - Test coaching system');
+    console.log('   - getCoachingStats() - Get current coaching statistics');
+    console.log('   - toggleVoice() - Toggle voice coaching on/off');
+    console.log('   - updateApiKey("new_key") - Update API key dynamically');
 });
 
 // Add global error handlers

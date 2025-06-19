@@ -328,6 +328,30 @@
             box-shadow: 0 6px 20px rgba(255, 71, 87, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
+        .top-control-btn.voice-enabled {
+            background: rgba(0, 255, 127, 0.1);
+            border-color: rgba(0, 255, 127, 0.2);
+            color: #00ff7f;
+        }
+
+        .top-control-btn.voice-enabled:hover {
+            background: rgba(0, 255, 127, 0.15);
+            border-color: rgba(0, 255, 127, 0.3);
+            box-shadow: 0 6px 20px rgba(0, 255, 127, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .top-control-btn.voice-disabled {
+            background: rgba(128, 128, 128, 0.1);
+            border-color: rgba(128, 128, 128, 0.2);
+            color: #888;
+        }
+
+        .top-control-btn.voice-disabled:hover {
+            background: rgba(128, 128, 128, 0.15);
+            border-color: rgba(128, 128, 128, 0.3);
+            box-shadow: 0 6px 20px rgba(128, 128, 128, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
         /* Font Awesome icon spacing */
         .fas, .far, .fab {
             margin-right: 6px;
@@ -1168,6 +1192,7 @@
                 <div id="exerciseBadge" class="exercise-badge">PUSH-UPS</div>
             </div>
             <div class="top-controls">
+                <button id="voiceToggleBtn" class="top-control-btn voice-enabled"><i class="fas fa-volume-up"></i> Voice ON</button>
                 <button id="stopBtnOverlay" class="top-control-btn danger"><i class="fas fa-stop"></i> Stop</button>
                 <select class="exercise-dropdown" id="exerciseDropdown">
                     <option value="">Select Exercise</option>
@@ -1293,6 +1318,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
 
+    <!-- Configuration (load before app.js) -->
+    <script src="js/config.js"></script>
+    
     <!-- Our Application Scripts -->
     <script type="module" src="js/app.js"></script>
 </body>
